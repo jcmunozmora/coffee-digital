@@ -6,11 +6,6 @@ config.R
 *.secret
 .env
 
-# Ignore output files
-out/
-*.png
-*.html
-
 # Ignore RStudio files
 .Rproj.user
 .Rhistory
