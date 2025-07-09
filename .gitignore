@@ -1,0 +1,23 @@
+# Ignore configuration files with sensitive data
+config.R
+
+# Ignore API keys and secrets
+*.key
+*.secret
+.env
+
+# Ignore output files
+out/
+*.png
+*.html
+
+# Ignore RStudio files
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Ignore system files
+.DS_Store
+Thumbs.db
