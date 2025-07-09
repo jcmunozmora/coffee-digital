@@ -40,30 +40,44 @@ community_pal <- colorFactor(palette = community_colors, domain = sample$communi
 sample$category_clean <- sample$category
 sample$community_clean <- sample$community
 
-# Create the interactive map with a simpler, more reliable approach
-interactive_map <- leaflet(sample) %>%
+# Create the interactive map with dynamic category controls
+interactive_map <- leaflet() %>%
   addTiles() %>%  # Add default OpenStreetMap tiles
   addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap, group = "Street Map") %>%
+  addProviderTiles(providers$OpenStreetMap, group = "Street Map")
+
+# Get unique categories
+unique_categories <- unique(sample$category)
+
+# Add circle markers for each category as separate layers
+for(cat in unique_categories) {
+  cat_data <- sample[sample$category == cat, ]
   
-  # Use simple circle markers (more reliable than awesome markers)
-  addCircleMarkers(
-    lng = ~longitude,
-    lat = ~latitude,
-    color = ~community_pal(community),
-    fillColor = ~community_pal(community),
-    fillOpacity = 0.7,
-    radius = 8,
-    stroke = TRUE,
-    weight = 2,
-    popup = ~paste("<strong>Community:</strong>", community, "<br>",
-                  "<strong>Category:</strong>", category, "<br>",
-                  "<strong>Coordinates:</strong>", round(latitude, 4), ",", round(longitude, 4))
-  ) %>%
-  
-  # Add layer control only for base maps
+  if(nrow(cat_data) > 0) {
+    interactive_map <- interactive_map %>%
+      addCircleMarkers(
+        data = cat_data,
+        lng = ~longitude,
+        lat = ~latitude,
+        color = ~community_pal(community),
+        fillColor = ~community_pal(community),
+        fillOpacity = 0.7,
+        radius = 8,
+        stroke = TRUE,
+        weight = 2,
+        popup = ~paste("<strong>Community:</strong>", community, "<br>",
+                      "<strong>Category:</strong>", category, "<br>",
+                      "<strong>Coordinates:</strong>", round(latitude, 4), ",", round(longitude, 4)),
+        group = cat  # This creates the layer group for filtering
+      )
+  }
+}
+
+interactive_map <- interactive_map %>%
+  # Add layer control with base maps and category overlays
   addLayersControl(
     baseGroups = c("Street Map", "Satellite"),
+    overlayGroups = unique_categories,
     options = layersControlOptions(collapsed = FALSE)
   ) %>%
   
@@ -71,8 +85,17 @@ interactive_map <- leaflet(sample) %>%
   addLegend(
     position = "bottomright",
     pal = community_pal,
-    values = ~community,
+    values = sample$community,
     title = "Communities",
+    opacity = 0.7
+  ) %>%
+  
+  # Add legend for categories with their symbols
+  addLegend(
+    position = "bottomleft",
+    colors = rep("gray", length(category_symbols)),
+    labels = names(category_symbols),
+    title = "Categories (Toggle Above)",
     opacity = 0.7
   )
 
