@@ -40,42 +40,27 @@ community_pal <- colorFactor(palette = community_colors, domain = sample$communi
 sample$category_clean <- sample$category
 sample$community_clean <- sample$community
 
-# Create the interactive map - fallback to basic markers if icons fail
+# Create the interactive map with a simpler, more reliable approach
 interactive_map <- leaflet(sample) %>%
   addTiles() %>%  # Add default OpenStreetMap tiles
   addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap, group = "Street Map")
-
-# Create the interactive map with a more direct approach
-interactive_map <- leaflet(sample) %>%
-  addTiles() %>%  # Add default OpenStreetMap tiles
-  addProviderTiles(providers$Esri.WorldImagery, group = "Satellite") %>%
-  addProviderTiles(providers$OpenStreetMap, group = "Street Map")
-
-# Add markers using a simple loop approach for better control
-for(i in 1:nrow(sample)) {
-  icon_name <- category_symbols[sample$category[i]]
-  if(is.na(icon_name)) icon_name <- "circle"
+  addProviderTiles(providers$OpenStreetMap, group = "Street Map") %>%
   
-  marker_color <- get_marker_color(sample$community[i])
+  # Use simple circle markers (more reliable than awesome markers)
+  addCircleMarkers(
+    lng = ~longitude,
+    lat = ~latitude,
+    color = ~community_pal(community),
+    fillColor = ~community_pal(community),
+    fillOpacity = 0.7,
+    radius = 8,
+    stroke = TRUE,
+    weight = 2,
+    popup = ~paste("<strong>Community:</strong>", community, "<br>",
+                  "<strong>Category:</strong>", category, "<br>",
+                  "<strong>Coordinates:</strong>", round(latitude, 4), ",", round(longitude, 4))
+  ) %>%
   
-  interactive_map <- interactive_map %>%
-    addAwesomeMarkers(
-      lng = sample$longitude[i],
-      lat = sample$latitude[i],
-      icon = awesomeIcons(
-        icon = icon_name,
-        iconColor = 'white',
-        markerColor = marker_color,
-        library = 'fa'
-      ),
-      popup = paste("<strong>Community:</strong>", sample$community[i], "<br>",
-                   "<strong>Category:</strong>", sample$category[i], "<br>",
-                   "<strong>Coordinates:</strong>", round(sample$latitude[i], 4), ",", round(sample$longitude[i], 4))
-    )
-}
-
-interactive_map <- interactive_map %>%
   # Add layer control only for base maps
   addLayersControl(
     baseGroups = c("Street Map", "Satellite"),
@@ -85,18 +70,9 @@ interactive_map <- interactive_map %>%
   # Add legend for communities
   addLegend(
     position = "bottomright",
-    colors = c("red", "blue", "green", "orange", "purple", "darkred", "lightred", "beige")[seq_along(unique_communities_list)],
-    labels = unique_communities_list,
+    pal = community_pal,
+    values = ~community,
     title = "Communities",
-    opacity = 0.7
-  ) %>%
-  
-  # Add legend for categories  
-  addLegend(
-    position = "bottomleft",
-    colors = rep("gray", length(category_symbols)),
-    labels = paste(names(category_symbols), "(", category_symbols, ")"),
-    title = "Category Symbols",
     opacity = 0.7
   )
 
